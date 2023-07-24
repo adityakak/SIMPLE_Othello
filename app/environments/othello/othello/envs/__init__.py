@@ -1,0 +1,1 @@
+from othello.envs.othello import OthelloEnv
