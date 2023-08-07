@@ -17,6 +17,7 @@ from utils.files import load_model, write_results
 from utils.register import get_environment
 from utils.agents import Agent
 
+import time
 import config
 
 
@@ -77,6 +78,8 @@ def main(args):
     for i, p in enumerate(players):
       logger.debug(f'Player {i+1} = {p.name}')
 
+    time.sleep(5)
+
     while not done:
 
       current_player = players[env.current_player_num]
@@ -104,6 +107,7 @@ def main(args):
         action = current_player.choose_action(env, choose_best_action = args.best, mask_invalid_actions = True)
 
       obs, reward, done, _ = env.step(action)
+      logger.debug(f'\nReward: {reward}')
 
       for r, player in zip(reward, players):
         total_rewards[player.id] += r
