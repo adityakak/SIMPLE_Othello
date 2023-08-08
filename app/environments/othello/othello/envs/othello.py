@@ -35,18 +35,31 @@ class OthelloEnv(gym.Env):
         self.num_squares = self.grid_length ** 2
         self.grid_shape = (self.grid_length, self.grid_length)
         self.action_space = gym.spaces.Discrete(self.num_squares)
-        self.observation_space = gym.spaces.Box(-1, 1, self.grid_shape+(2,))
+        self.observation_space = gym.spaces.Box(-1, 1, self.grid_shape+(3,))
         self.verbose = verbose
 
     @property
     def observation(self):
+        moves = self.legal_moves(self.players[self.current_player_num], self.board)
         if self.players[self.current_player_num].token.number == 1:
-            position = np.array([x.number for x in self.board]).reshape(self.grid_shape)
+            position_1 = np.array([1 if x.number == 1 else 0  for x in self.board]).reshape(self.grid_shape)
+            position_2 = np.array([1 if x.number == -1 else 0 for x in self.board]).reshape(self.grid_shape)
+            position_3 = np.array([0 if i in moves else 1 for i,x in enumerate(self.board)]).reshape(self.grid_shape)
+            # position = np.array([x.number for x in self.board]).reshape(self.grid_shape)
+            logger.debug(f'My Pieces: {position_1}')
+            logger.debug(f'Opponent Pieces: {position_2}')
+            logger.debug(f'Legal Moves: {position_3}')
         else:
-            position = np.array([-x.number for x in self.board]).reshape(self.grid_shape)
+            position_1 = np.array([1 if x.number == -1 else 0 for x in self.board]).reshape(self.grid_shape)
+            position_2 = np.array([1 if x.number == 1 else 0 for x in self.board]).reshape(self.grid_shape)
+            position_3 = np.array([0 if i in moves else 1 for i,x in enumerate(self.board)]).reshape(self.grid_shape)
+            # position = np.array([-x.number for x in self.board]).reshape(self.grid_shape)
+            logger.debug(f'My Pieces: {position_1}')
+            logger.debug(f'Opponent Pieces: {position_2}')
+            logger.debug(f'Legal Moves: {position_3}')
 
-        la_grid = np.array(self.legal_actions).reshape(self.grid_shape)
-        out = np.stack([position,la_grid], axis = -1)
+        # la_grid = np.array(self.legal_actions).reshape(self.grid_shape)
+        out = np.stack([position_1, position_2, position_3], axis = -1) 
         return out
     
     @property
@@ -105,7 +118,10 @@ class OthelloEnv(gym.Env):
 
         board = self.board
         done = None
-
+        # logger.debug(f'\n\n---- NEW TURN ----')
+        # logger.debug(f'Player {self.players[self.current_player_num].id} ({self.players[self.current_player_num].token.symbol})')
+        # logger.debug(f'Action: {action}')
+        # logger.debug(f'Board: {board}')
         if action not in self.legal_moves(self.players[self.current_player_num], board):
             done = True
             reward = [1, 1]
@@ -121,14 +137,9 @@ class OthelloEnv(gym.Env):
                     r = self.score_reward(board, self.players[self.current_player_num])
                     reward = [-r, -r]
                     reward[self.current_player_num] = r
-                    self.done = done
-
-                    return self.observation, reward, done, {}
                 else:
                     done = False
                     reward = [0, 0]
-                    self.done = done
-                    return self.observation, reward, done, {}
             done = False
         self.done = done
 

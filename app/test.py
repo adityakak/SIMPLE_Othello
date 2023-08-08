@@ -78,7 +78,7 @@ def main(args):
     for i, p in enumerate(players):
       logger.debug(f'Player {i+1} = {p.name}')
 
-    time.sleep(5)
+    #time.sleep(5)
 
     while not done:
 

@@ -49,7 +49,7 @@ class Connect4Env(gym.Env):
             position_1 = np.array([1 if x.number == -1 else 0 for x in self.board]).reshape(self.grid_shape)
             position_2 = np.array([1 if x.number == 1 else 0 for x in self.board]).reshape(self.grid_shape)
             position_3 = np.array([self.can_be_placed(i) for i,x in enumerate(self.board)]).reshape(self.grid_shape)
-
+        logger.debug(f'Be placed: {self.can_be_placed(36)}')
         out = np.stack([position_1, position_2, position_3], axis = -1) 
         return out
 
