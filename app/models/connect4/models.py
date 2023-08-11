@@ -19,7 +19,7 @@ class CustomPolicy(ActorCriticPolicy):
             self._policy = policy_head(extracted_features)
             self._value_fn, self.q_value = value_head(extracted_features)
 
-            self._proba_distribution  = CategoricalProbabilityDistribution(self._policy)
+            self._proba_distribution = CategoricalProbabilityDistribution(self._policy)
 
             
         self._setup_init()

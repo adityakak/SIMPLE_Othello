@@ -44,21 +44,11 @@ class OthelloEnv(gym.Env):
         if self.players[self.current_player_num].token.number == 1:
             position_1 = np.array([1 if x.number == 1 else 0  for x in self.board]).reshape(self.grid_shape)
             position_2 = np.array([1 if x.number == -1 else 0 for x in self.board]).reshape(self.grid_shape)
-            position_3 = np.array([0 if i in moves else 1 for i,x in enumerate(self.board)]).reshape(self.grid_shape)
-            # position = np.array([x.number for x in self.board]).reshape(self.grid_shape)
-            logger.debug(f'My Pieces: {position_1}')
-            logger.debug(f'Opponent Pieces: {position_2}')
-            logger.debug(f'Legal Moves: {position_3}')
+            position_3 = np.array([1 if i in moves else -1 for i,x in enumerate(self.board)]).reshape(self.grid_shape)
         else:
             position_1 = np.array([1 if x.number == -1 else 0 for x in self.board]).reshape(self.grid_shape)
             position_2 = np.array([1 if x.number == 1 else 0 for x in self.board]).reshape(self.grid_shape)
-            position_3 = np.array([0 if i in moves else 1 for i,x in enumerate(self.board)]).reshape(self.grid_shape)
-            # position = np.array([-x.number for x in self.board]).reshape(self.grid_shape)
-            logger.debug(f'My Pieces: {position_1}')
-            logger.debug(f'Opponent Pieces: {position_2}')
-            logger.debug(f'Legal Moves: {position_3}')
-
-        # la_grid = np.array(self.legal_actions).reshape(self.grid_shape)
+            position_3 = np.array([1 if i in moves else -1 for i,x in enumerate(self.board)]).reshape(self.grid_shape)
         out = np.stack([position_1, position_2, position_3], axis = -1) 
         return out
     
@@ -117,20 +107,29 @@ class OthelloEnv(gym.Env):
         reward = [0, 0]
 
         board = self.board
-        done = None
+        done = False
+        bonus = False
+        skip = False
         # logger.debug(f'\n\n---- NEW TURN ----')
         # logger.debug(f'Player {self.players[self.current_player_num].id} ({self.players[self.current_player_num].token.symbol})')
         # logger.debug(f'Action: {action}')
         # logger.debug(f'Board: {board}')
         if action not in self.legal_moves(self.players[self.current_player_num], board):
             done = True
-            reward = [1, 1]
+            reward = [0, 0]
             reward[self.current_player_num] = -1
+            if self.turns_taken != 0:
+                reward[(self.current_player_num + 1) % 2] += 1
         else:
+            bonus = True
+
             board = newBoardState(''.join([x.symbol for x in board]), self.players[self.current_player_num].token.symbol, action)
             board = [Token('x', 1) if x == 'x' else Token('o', -1) if x == 'o' else Token('.', 0) for x in board]
             self.board = board
+            
             self.turns_taken += 1
+
+            logger.debug(f'Board: {board}')
             if len(self.legal_moves(self.players[(self.current_player_num + 1) % 2], board)) == 0:
                 if len(self.legal_moves(self.players[self.current_player_num], board)) == 0:
                     done = True
@@ -139,13 +138,13 @@ class OthelloEnv(gym.Env):
                     reward[self.current_player_num] = r
                 else:
                     done = False
+                    skip = True
                     reward = [0, 0]
-            done = False
         self.done = done
-
-        if not done:
+        if bonus:
+            reward[self.current_player_num] += 1
+        if not done and not skip:
             self.current_player_num = (self.current_player_num + 1) % 2
-
         return self.observation, reward, done, {}
     
     def render(self, mode='human', close=False, verbose = True):

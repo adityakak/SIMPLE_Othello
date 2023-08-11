@@ -1,4 +1,5 @@
 *
+!othello/
 !.gitignore
 !pretrained
 !pretrained/*/

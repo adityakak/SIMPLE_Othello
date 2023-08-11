@@ -66,9 +66,7 @@ def load_model(env, name):
                     logger.info(f'Saving base.zip PPO model...')
                     ppo_model.save(os.path.join(config.MODELDIR, env.name, 'base.zip'))
                 else:
-
                     ppo_model = PPO1.load(os.path.join(config.MODELDIR, env.name, 'base.zip'), env=env)
-
                 cont = False
             except IOError as e:
                 sys.exit(f'Check zoo/{env.name}/ exists and read/write permission granted to user')

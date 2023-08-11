@@ -3,6 +3,8 @@ import tensorflow as tf
 tf.get_logger().setLevel('INFO')
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
+# from tensorflow import keras
+# from keras.layers import BatchNormalization, Activation, Flatten, Conv2D, Add, Dense, Dropout
 from tensorflow.keras.layers import BatchNormalization, Activation, Flatten, Conv2D, Add, Dense, Dropout
 
 from stable_baselines.common.policies import ActorCriticPolicy
@@ -41,27 +43,45 @@ class CustomPolicy(ActorCriticPolicy):
     
 
 def value_head(y):
+    # y = convolutional(y, 4, 1)
+    # y = Flatten()(y)
+    # y = dense(y, 256, batch_norm = False)
+    # vf = dense(y, 1, batch_norm = False, activation = 'tanh', name='vf')
+    # q = dense(y, 64, batch_norm = False, activation = 'tanh', name='q')
+
+    # y = convolutional(y, 32, 3)
     y = convolutional(y, 4, 1)
+    # y = convolutional(y, 64, 1)
     y = Flatten()(y)
-    y = dense(y, 256, batch_norm = False)
-    vf = dense(y, 1, batch_norm = False, activation = 'tanh', name='vf')
-    q = dense(y, 64, batch_norm = False, activation = 'tanh', name='q')
+    y = dense(y, 256, batch_norm=False)
+    vf = dense(y, 1, batch_norm=False, activation='tanh', name='vf')
+    q = dense(y, 64, batch_norm=False, activation='tanh', name='q')
     return vf, q
 
 
 def policy_head(y):
+    # y = convolutional(y, 4, 1)
+    # y = Flatten()(y)
+    # policy = dense(y, 64, batch_norm = False, activation = None, name='pi')
+
     y = convolutional(y, 4, 1)
+    # y = convolutional(y, 64, 3)
+    # y = convolutional(y, 128, 3)
     y = Flatten()(y)
-    policy = dense(y, 64, batch_norm = False, activation = None, name='pi')
+    policy = dense(y, 64, batch_norm=False, activation=None, name='pi')
     return policy
 
 
 def resnet_extractor(y, **kwargs):
 
-    y = convolutional(y, 52, 3)
+    y = convolutional(y, 32, 4)
     for _ in range(5):
-        y = residual(y, 52, 3)
+        y = residual(y, 32, 4)
 
+    # y = convolutional(y, 64, 3)
+    # y = convolutional(y, 128, 3)
+    # for _ in range(7):  # Use more residual blocks
+    #     y = residual(y, 128, 3)
     return y
 
 
