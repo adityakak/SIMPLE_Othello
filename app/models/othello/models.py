@@ -5,11 +5,14 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # from tensorflow import keras
 # from keras.layers import BatchNormalization, Activation, Flatten, Conv2D, Add, Dense, Dropout
-from tensorflow.keras.layers import BatchNormalization, Activation, Flatten, Conv2D, Add, Dense, Dropout
+from tensorflow.keras.layers import BatchNormalization, Activation, Flatten, Conv2D, Add, Dense, Dropout, Lambda
 
 from stable_baselines.common.policies import ActorCriticPolicy
 from stable_baselines.common.distributions import CategoricalProbabilityDistributionType, CategoricalProbabilityDistribution
+from stable_baselines import logger
+import tensorflow as tf
 
+ACTIONS = 64
 
 class CustomPolicy(ActorCriticPolicy):
     def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse=False, **kwargs):
@@ -17,8 +20,19 @@ class CustomPolicy(ActorCriticPolicy):
 
         with tf.variable_scope("model", reuse=reuse):
             
-            extracted_features = resnet_extractor(self.processed_obs, **kwargs)
-            self._policy = policy_head(extracted_features)
+            obs, legal_actions = split_input(self.processed_obs, 1)
+            legal_actions_reshaped = tf.reshape(legal_actions, shape=(-1, 64))
+                        
+            # print(f'Original Obs {self.processed_obs}')
+            # print(f'Obs {obs}')
+            # print(f'Legal_Actions Original {legal_actions}')
+            # print(f'Legal_Actions Reshaped {legal_actions_reshaped}')
+            
+            # extracted_features = resnet_extractor(self.processed_obs, **kwargs)
+            # self._policy = policy_head(extracted_features)
+            
+            extracted_features = resnet_extractor(obs, **kwargs)
+            self._policy = policy_head(extracted_features, legal_actions_reshaped)
             self._value_fn, self.q_value = value_head(extracted_features)
 
             self._proba_distribution = CategoricalProbabilityDistribution(self._policy)
@@ -41,6 +55,8 @@ class CustomPolicy(ActorCriticPolicy):
     def value(self, obs, state=None, mask=None):
         return self.sess.run(self.value_flat, {self.obs_ph: obs})
     
+def split_input(obs, split):
+    return obs[:, :, :, :2], obs[:, :, :, 2:]
 
 def value_head(y):
     # y = convolutional(y, 4, 1)
@@ -52,6 +68,7 @@ def value_head(y):
     # y = convolutional(y, 32, 3)
     y = convolutional(y, 4, 1)
     # y = convolutional(y, 64, 1)
+    # print(f'Value head y: {y}')
     y = Flatten()(y)
     y = dense(y, 256, batch_norm=False)
     vf = dense(y, 1, batch_norm=False, activation='tanh', name='vf')
@@ -59,7 +76,7 @@ def value_head(y):
     return vf, q
 
 
-def policy_head(y):
+def policy_head(y, legal_actions):
     # y = convolutional(y, 4, 1)
     # y = Flatten()(y)
     # policy = dense(y, 64, batch_norm = False, activation = None, name='pi')
@@ -68,7 +85,13 @@ def policy_head(y):
     # y = convolutional(y, 64, 3)
     # y = convolutional(y, 128, 3)
     y = Flatten()(y)
+    # print(f'Policy head y: {y}')
     policy = dense(y, 64, batch_norm=False, activation=None, name='pi')
+    # print(f"Unmasked Policy {policy}")
+    mask = Lambda(lambda x: (1 - x) * -1e8)(legal_actions)   
+    
+    policy = Add()([policy, mask])
+    # print(f"Masked Policy {policy}")
     return policy
 
 

@@ -116,12 +116,14 @@ class OthelloEnv(gym.Env):
         # logger.debug(f'Board: {board}')
         if action not in self.legal_moves(self.players[self.current_player_num], board):
             done = True
-            reward = [0, 0]
+            # reward = [0, 0]
+            # reward[self.current_player_num] = -1
+            # if self.turns_taken != 0:
+            #     reward[(self.current_player_num + 1) % 2] += 1
+            reward = [1, 1]
             reward[self.current_player_num] = -1
-            if self.turns_taken != 0:
-                reward[(self.current_player_num + 1) % 2] += 1
         else:
-            bonus = True
+            # bonus = True
 
             board = newBoardState(''.join([x.symbol for x in board]), self.players[self.current_player_num].token.symbol, action)
             board = [Token('x', 1) if x == 'x' else Token('o', -1) if x == 'o' else Token('.', 0) for x in board]
@@ -141,8 +143,8 @@ class OthelloEnv(gym.Env):
                     skip = True
                     reward = [0, 0]
         self.done = done
-        if bonus:
-            reward[self.current_player_num] += 1
+        # if bonus:
+        #     reward[self.current_player_num] += 1
         if not done and not skip:
             self.current_player_num = (self.current_player_num + 1) % 2
         return self.observation, reward, done, {}
